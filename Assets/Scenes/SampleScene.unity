@@ -15661,6 +15661,22 @@ PrefabInstance:
       propertyPath: m_text
       value: Big yellow bouncing ball
       objectReference: {fileID: 0}
+    - target: {fileID: 9108661110387219318, guid: deb06f9b0e332cb48b8d1077788cf81b, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 059bd4a001eb3f248b65f9c82cd11be3, type: 2}
+    - target: {fileID: 9108661110387219318, guid: deb06f9b0e332cb48b8d1077788cf81b, type: 3}
+      propertyPath: m_fontStyle
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9108661110387219318, guid: deb06f9b0e332cb48b8d1077788cf81b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 3745939328139470476, guid: 059bd4a001eb3f248b65f9c82cd11be3, type: 2}
+    - target: {fileID: 9108661110387219318, guid: deb06f9b0e332cb48b8d1077788cf81b, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
