@@ -42,7 +42,7 @@ public class PlayerController : MonoBehaviour
 
     private void RotatePlayer()
     {
-        float yawDelta = mouseDelta.normalized.x * 1f;
+        float yawDelta = mouseDelta.normalized.x * 0.8f;
         rb.angularVelocity = new Vector3(0, yawDelta, 0);
     }
 
@@ -50,7 +50,7 @@ public class PlayerController : MonoBehaviour
     {
         float pitchDelta = mouseDelta.normalized.y * 0.5f;
         pitchDelta = Mathf.Clamp(pitchDelta, -1f, 2f);
-        float pitch = cameraTarget.localPosition.y + pitchDelta * 2 * Time.fixedDeltaTime;
+        float pitch = cameraTarget.localPosition.y + pitchDelta * 1.7f * Time.fixedDeltaTime;
 
         cameraTarget.localPosition = new Vector3(0, pitch, 0);
     }
