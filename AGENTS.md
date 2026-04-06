@@ -4,18 +4,24 @@
 
 Projet Unity cible `WebGL` pour une galerie virtuelle 3D.
 
-Le depot actuel couvre la partie Web gallery:
+Le depot couvre aujourd'hui deux couches complementaires:
+
+- la scene Unity WebGL
+- le shell web public de deploiement dans `Web/`
+
+Fonctionnellement, on y trouve:
 
 - une scene 3D navigable
 - un joueur en vue libre
-- des objets interactifs avec animations/particules
-- un export WebGL deja present dans `Builds/`
+- des objets interactifs avec animations et particules
+- un site public avec routage `desktop` / `mobile`
+- deux builds WebGL deployes separement dans `Web/BuildDesktop/` et `Web/BuildMobile/`
 
 Contexte produit plus large:
 
-- ce projet est destine a fonctionner avec un second projet Unity mobile Android/iOS
-- le projet mobile doit gerer deplacement mobile, gyro, download d'image targets, impression/affichage de cibles, puis lancement d'une experience AR
-- l'integration des deux projets dans une architecture agentique commune est prevue dans un second temps
+- ce projet doit coexister avec un second projet Unity mobile Android/iOS
+- le projet mobile doit gerer deplacement mobile, gyro, download d'image targets, impression ou affichage de cibles, puis lancement d'une experience AR
+- l'integration des deux projets dans une architecture agentique commune est prevue plus tard
 
 ## Regles de collaboration
 
@@ -29,15 +35,20 @@ Contexte produit plus large:
 - Changements minimaux, lisibles, testables.
 - Eviter les changements de design systemique si un correctif local suffit.
 - Si un comportement depend de l'Inspector, expliciter l'hypothese.
-- Ne pas modifier les assets ou scenes non concernes par la demande.
+- Ne pas modifier les assets, scenes ou fichiers web non concernes par la demande.
+- Quand une documentation semble contredire l'etat du repo, verifier d'abord les fichiers reels avant d'agir.
 
 ## Gardes-fous specifiques a ce depot
 
-- Ne pas modifier `Assets/Scenes/SampleScene.unity` sans demande explicite: c'est l'unique scene active du build.
+- Ne pas modifier `Assets/Scenes/MainScene.unity` sans demande explicite: c'est l'unique scene active du build.
 - Ne pas modifier `ProjectSettings/*` sans demande explicite: la cible WebGL et les reglages de rendu sont deja configures.
 - Ne pas modifier `Assets/Prefabs/PlayerPrefab.prefab` ou `Assets/Prefabs/CanvasOffset.prefab` sans besoin direct: beaucoup de comportements reposent sur leurs references Inspector.
-- Considere `Assets/Scripts/index.html` comme le vrai point d'entree HTML a maintenir pour le site.
-- Considere `Builds/index.html` comme un artefact genere automatiquement par Unity lors du build, non source de verite.
+- Considere `Web/` comme la source de verite du site deploye.
+- Considere `Web/index.html` comme le point d'entree public, avec `Web/bootstrap.js` pour le routage.
+- Considere `Web/desktop.html` + `Web/desktopApp.js` comme la source de verite desktop.
+- Considere `Web/mobile.html` + `Web/mobileApp.js` comme la source de verite mobile.
+- Considere `Web/BuildDesktop/*` et `Web/BuildMobile/*` comme des artefacts Unity deployes, pas comme des sources a editer a la main sauf demande explicite.
+- Considere `Builds/index.html` comme un artefact Unity historique, non source de verite.
 
 ## Contexte technique precise
 
@@ -101,7 +112,7 @@ Modules Unity explicites dans `manifest.json`:
 - `com.unity.modules.wind` `1.0.0`
 - `com.unity.modules.xr` `1.0.0`
 
-Packages resolves notables d'apres `Packages/packages-lock.json`:
+Packages resolus notables d'apres `Packages/packages-lock.json`:
 
 - `com.unity.burst` `1.8.27`
 - `com.unity.collections` `2.6.2`
@@ -116,10 +127,11 @@ Packages resolves notables d'apres `Packages/packages-lock.json`:
 
 ### Scene et build
 
-- Scene active unique: `Assets/Scenes/SampleScene.unity`
+- Scene active unique: `Assets/Scenes/MainScene.unity`
 - Build settings: scene unique active
 - Template WebGL actuel: `APPLICATION:Default`
-- Export WebGL existant: `Builds/`
+- Export Unity historique present: `Builds/`
+- Builds deployes actuels pour le site: `Web/BuildDesktop/` et `Web/BuildMobile/`
 
 ### Rendu
 
@@ -143,6 +155,16 @@ Packages resolves notables d'apres `Packages/packages-lock.json`:
 
 ## Architecture fonctionnelle actuelle
 
+### Scene
+
+La scene active contient au minimum les objets suivants:
+
+- `Main Camera`
+- `SceneManager`
+- `EventSystem`
+- `EntryPoint`
+- une instance de `PlayerPrefab`
+
 ### Scripts gameplay
 
 - `SceneManager.cs`
@@ -152,6 +174,7 @@ Packages resolves notables d'apres `Packages/packages-lock.json`:
   - deplace un `Rigidbody`
   - lit les actions `Move` et `Look` du `Input System`
   - depend de references Inspector: `rb`, `cameraTarget`, `cameraPlace`, `entryPoint`
+  - positionne le joueur sur `entryPoint` au `Start()`
 - `SphereController.cs`
   - active une animation de rebond et un canvas a l'entree du trigger
 - `RectangleController.cs`
@@ -171,7 +194,7 @@ Packages resolves notables d'apres `Packages/packages-lock.json`:
   - `cameraTarget` et `cameraPlace` sont des enfants du prefab
 - `Assets/Prefabs/CanvasOffset.prefab`
   - contient un canvas monde + `CanvasRotation`
-  - sert vraisemblablement de bulle d'information contextuelle pres des objets
+  - sert de bulle d'information contextuelle pres des objets
 
 ### Input
 
@@ -181,20 +204,55 @@ Packages resolves notables d'apres `Packages/packages-lock.json`:
 - Control schemes declares: `Keyboard&Mouse`, `Gamepad`, `Touch`, `Joystick`, `XR`
 - En pratique, le gameplay code actuel ne traite explicitement que `Move` et `Look`
 
-## Convention de travail pour le HTML WebGL
+## Convention de travail pour le WebGL et le site
 
-- `Assets/Scripts/index.html` est la source de verite pour le HTML du site Web gallery.
-- `Builds/index.html` est un artefact genere par Unity au moment du build.
-- Si l'objectif est d'ameliorer le site public autour de la Web gallery, proposer d'abord l'une de ces approches:
-  - garder l'export Unity dans `Builds/` et creer une vraie page site autour
-  - maintenir un `index.html` de deploiement a part du pipeline Unity
-  - basculer vers un template WebGL custom Unity, mais seulement sur demande explicite
+- `Web/index.html` est le point d'entree public du site.
+- `Web/bootstrap.js` detecte le profil client puis redirige vers `desktop.html` ou `mobile.html`.
+- `Web/bootstrap.js` detecte aussi `ios` ou `android` pour la branche mobile et transmet cette information via le query string.
+- `Web/desktop.html` charge `BuildDesktop/Builds.loader.js` et `Web/desktopApp.js`.
+- `Web/mobile.html` charge `BuildMobile/Builds.loader.js` et `Web/mobileApp.js`.
+- `desktop.html` et `mobile.html` portent chacune leur propre `meta[name="site-version"]`.
+- `desktopApp.js` et `mobileApp.js` versionnent aussi les assets web references via `data-versioned-src` et `data-versioned-href`.
+- `mobile.html` fonctionne actuellement comme un hub mobile:
+  - page d'accueil avec logo + 3 boutons
+  - `Web gallery`, `Statement` et `AR Experience` ouvrent des overlays plein ecran
+  - l'overlay `AR Experience` n'affiche plus de QR codes et utilise un bouton store unique
+- `Web/.htaccess` sert les shells et scripts en `no-cache, must-revalidate`.
+- `Web/.htaccess` sert `BuildDesktop/*.(data|wasm|js)` et `BuildMobile/*.(data|wasm|js)` avec cache long.
+
+## Convention de travail pour le fullscreen et le cursor lock
+
+- le fullscreen desktop appartient au shell web, pas au build Unity
+- la logique active de fullscreen est dans `Web/desktopApp.js`
+- la touche `F` y alterne le fullscreen du conteneur Unity
+- le cursor lock reste une intention cote Unity via `SceneManager.cs`
+- en WebGL, le navigateur garde l'autorite finale sur le pointer lock
+- sur mobile, les appels Unity de cursor lock sont inutiles mais non bloquants a ce stade
+- sur mobile, l'ouverture du lien store peut rester dans le meme onglet, ouvrir un nouvel onglet ou basculer vers une vue systeme selon le navigateur et l'OS
 
 ## Hypotheses a expliciter si un agent modifie le projet
 
 - si un comportement depend d'une reference de scene, nommer l'objet exact et le champ Inspector exact
 - si un changement touche le WebGL, preciser s'il vise:
   - le build Unity genere
-  - la page de presentation du site
+  - le shell web public
+  - la logique de routage `desktop` / `mobile`
   - la logique de deploiement sur le VPS OVH
-- si un changement vise la navigation, preciser s'il concerne clavier/souris desktop seulement ou aussi mobile/gamepad/touch
+- si un changement vise la navigation, preciser s'il concerne clavier et souris desktop seulement ou aussi mobile, gamepad ou touch
+
+## Etat local a garder en tete
+
+- le worktree n'est pas propre
+- `AGENTS.md`, `PlayerController.cs`, `MainScene.unity`, `ProjectSettings/ProjectSettings.asset`, `NOTES.md`, `Web/.htaccess` et `Web/index.html` sont deja modifies localement
+- `Assets/Scripts/WebClientBootstrap.cs` et son `.meta` sont supprimes localement
+- `Web/bootstrap.js`, `Web/desktop.html`, `Web/desktopApp.js`, `Web/mobile.html`, `Web/mobileApp.js`, `Web/BuildDesktop/`, `Web/BuildMobile/` et `Web/VeniceTargets.pdf` sont actuellement non suivis
+- eviter toute edition large sans verifier d'abord l'origine des changements deja presents
+
+## Points d'attention actuels
+
+- certaines documentations historiques peuvent encore mentionner `SampleScene` ou `Assets/Scripts/index.html`: ce n'est plus l'etat reel du repo
+- `desktopApp.js` et `mobileApp.js` restent tres proches et dupliques
+- `desktop.html` et `mobile.html` divergent maintenant nettement dans leur UX, mais partagent encore une base de styles et de structure
+- `productName` vaut encore `VeniseARShow` dans les apps web, alors que le projet Unity est `Venise_WebGallery`
+- la logique gameplay Unity reste desktop-first, meme si le shell web sait maintenant router vers une branche mobile
+- la prochaine etape structurante attendue est la creation d'une vraie scene mobile Unity, idealement accompagnee d'une scene desktop dediee et d'un workflow de build distinct
