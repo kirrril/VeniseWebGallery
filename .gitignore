@@ -6,6 +6,9 @@
 [Ll]ogs/
 UserSettings/
 
+Web/BuildDesktop/*
+Web/BuildMobile/*
+
 .vscode/
 .idea/
 
