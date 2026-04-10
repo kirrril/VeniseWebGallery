@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerControllerDesktop : MonoBehaviour
 {
     public Rigidbody rb;
     [SerializeField] private Transform cameraTarget;

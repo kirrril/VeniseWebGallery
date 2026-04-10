@@ -30,3 +30,7 @@ Web/BuildMobile/*
 
 .DS_Store
 Thumbs.db
+
+# Local agent/docs helpers kept out of the public repo
+AGENTS.md
+NOTES.md
